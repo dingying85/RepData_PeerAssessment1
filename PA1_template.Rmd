@@ -7,19 +7,86 @@ output:
 
 
 ## Loading and preprocessing the data
+```{r simulatedata, echo=TRUE}
+data=read.csv("activity.csv")
+print(data[1:10,],type="html")
+```
 
-
-
-## What is mean total number of steps taken per day?
-
-
-
+## What is mean total number of steps taken per day?  
+```{r histogram,echo=TRUE,fig.height=4}
+total_steps_per_day=tapply(data$steps,data$date,sum)
+hist(total_steps_per_day)
+```
+mean number of steps taken per day  
+```{r,echo=TRUE}
+print(paste("mean steps is:",mean(total_steps_per_day,na.rm=TRUE)))
+```
+median number of steps taken per day  
+```{r,echo=TRUE}
+print(paste("median steps is:",median(total_steps_per_day,na.rm=TRUE)))
+```
 ## What is the average daily activity pattern?
-
-
-
+Make a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all days (y-axis)  
+```{r,fig.height=4,echo=TRUE}
+interval_ave_steps=tapply(data$steps,data$interval,function(x) mean(x,na.rm=TRUE))
+plot(rownames(interval_ave_steps),interval_ave_steps,type="l",xlab="5 min interval")
+```
+Which 5-minute interval, on average across all the days in the dataset, contains the maximum number of steps?
+```{r,echo=TRUE}
+print(as.numeric(which.max(interval_ave_steps)))
+```
 ## Imputing missing values
-
-
+Calculate and report the total number of missing values in the dataset (i.e. the total number of rows with NAs)
+```{r,echo=TRUE}
+print(sum(is.na(data$steps)==1))
+```
+Devise a strategy for filling in all of the missing values in the dataset. Apply the mean for that 5-minute interval.
+```{r,echo=TRUE}
+index_interval=which(is.na(data$steps)==1)
+interval_name=data$interval[index_interval]
+match_steps=interval_ave_steps[match(interval_name,rownames(interval_ave_steps))]
+data$steps[index_interval]=match_steps
+```
+Create a new dataset that is equal to the original dataset but with the missing data filled in.
+```{r,echo=TRUE}
+data1=data
+print(data1[1:10,])
+```
+Make a histogram of the total number of steps taken each day and Calculate and report the mean and median total number of steps taken per day. Do these values differ from the estimates from the first part of the assignment? What is the impact of imputing missing data on the estimates of the total daily number of steps?
+A histogram of the total number of steps of the new data
+```{r histogram2,echo=TRUE,fig.height=4}
+total_steps_per_day_new=tapply(data$steps,data$date,sum)
+hist(total_steps_per_day_new)
+```
+mean number of steps (the same)
+```{r,echo=TRUE}
+print(mean(total_steps_per_day_new))
+```
+median number of steps (not the same)
+```{r,echo=TRUE}
+print(median(total_steps_per_day_new)) 
+```
+Imputing missing data will increase the total daily number of steps for the days with missing values
 
 ## Are there differences in activity patterns between weekdays and weekends?
+Create a new factor variable in the dataset with two levels – “weekday” and “weekend” indicating whether a given date is a weekday or weekend day.
+```{r,echo=TRUE}
+weekday_factor=weekdays(as.Date(data1$date))
+weekday_factor1=array("weekday",dim=length(weekday_factor))
+index=which(weekday_factor=="Saturday"|weekday_factor=="Sunday")
+weekday_factor1[index]="weekend"
+data1=data.frame(data1,weekend=weekday_factor1)
+print(data1[1:10,])
+```
+Make a panel plot containing a time series plot (i.e. type = "l") of the 5-minute interval (x-axis) and the average number of steps taken, averaged across all weekday days or weekend days (y-axis). The plot should look something like the following, which was creating using simulated data:
+```{r,echo=TRUE,fig.height=4}
+par(mfrow=c(1,2))
+index1=which(data1$weekend=="weekday")
+interval_ave_steps=tapply(data1$steps[index1],data1$interval[index1],function(x) mean(x,na.rm=TRUE))
+plot(rownames(interval_ave_steps),interval_ave_steps,type="l",xlab="5 min interval",main="weekday")
+index1=which(data1$weekend=="weekend")
+interval_ave_steps=tapply(data1$steps[index1],data1$interval[index1],function(x) mean(x,na.rm=TRUE))
+plot(rownames(interval_ave_steps),interval_ave_steps,type="l",xlab="5 min interval",main="weekend")
+```
+
+
